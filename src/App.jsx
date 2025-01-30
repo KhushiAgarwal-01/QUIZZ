@@ -1,16 +1,21 @@
 import { useState } from 'react'
-import './App.css'
+// import './App.css'
+import {BrowserRouter,Routes,Route} from 'react-router-dom';
+import Signin from './pages/signin';
+import Signout from './pages/signout';
+import Quiz from './pages/Quiz';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+ export default function App(){
   return (
-    <>
-      <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-    </>
+   <BrowserRouter>
+   <Routes>
+    <Route path="/signin" element={<Signin/>} />
+    <Route path="/signout" element={<Signout/>} />
+    <Route path="/quiz" element={<Quiz/>} />
+
+
+   </Routes>
+   </BrowserRouter>
   )
 }
 
-export default App
