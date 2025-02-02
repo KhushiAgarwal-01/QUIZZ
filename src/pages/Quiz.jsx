@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Confetti from "react-confetti"; // Import confetti animation
+import Confetti from "react-confetti";
+import ProgressBar from "../components/ProgressBar";
+import QuestionCard from "../components/QuestionCard";
+import Results from "../components/Results";
+import LearningModal from "../components/LearningModal";
 import "./Quiz.css";
 
 const Quiz = () => {
@@ -13,9 +17,7 @@ const Quiz = () => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(null);
   const [showLearningMaterial, setShowLearningMaterial] = useState(false);
-
-  const [showConfetti, setShowConfetti] = useState(false); // Confetti state
-
+  const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState(15);
 
   useEffect(() => {
@@ -31,36 +33,27 @@ const Quiz = () => {
     setTimeLeft(15);
   }, [currentQuestionIndex]);
 
-
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/questions");
-        
-        // Shuffle the questions before setting them in state
         const shuffledQuestions = response.data.questions.sort(() => Math.random() - 0.5);
-  
         setQuestions(shuffledQuestions);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
         setError(error.message);
         setLoading(false);
       }
     };
-  
     fetchQuestions();
   }, []);
 
   const optionClicked = (isCorrect) => {
     setIsCorrectAnswer(isCorrect);
     setSelectedAnswer(true);
-
     if (isCorrect) {
       setScore(score + 1);
-      setShowConfetti(true); // Show confetti when correct answer is selected
-
-      // Stop confetti after 3 seconds
+      setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 5000);
     }
   };
@@ -90,89 +83,32 @@ const Quiz = () => {
 
   return (
     <>
-      {showConfetti && <Confetti />} {/* Confetti Animation */}
-
+      {showConfetti && <Confetti />}
       <h2 className="heading">Genetics and Evolution</h2>
-
       <div className="quiz-container">
         {showResults ? (
-          <div className="result">
-            <h2>Quiz Completed!</h2>
-            <p>Your Score: {score} / 5</p>
-            <button onClick={restartGame}>Restart Quiz</button>
-          </div>
+          <Results score={score} restartGame={restartGame} />
         ) : (
-          <div className="question-card">
-            <div className="progress-bar">
-              <div style={{ width: `${progress}%` }}></div>
-            </div>
-            <h2>Time Left: {timeLeft} seconds</h2>
-            <h2 className="scoreboard">Score: {score}</h2>
-            <h2>Question {currentQuestionIndex + 1}</h2>
-            <p>{questions[currentQuestionIndex].description}</p>
-
-            {/* Options */}
-            <div className="options">
-              {questions[currentQuestionIndex].options.map((option, index) => (
-                <button
-                  key={index}
-                  className="option-button"
-                  style={{
-                    backgroundColor:
-                      selectedAnswer && option.is_correct
-                        ? "green"
-                        : selectedAnswer && !option.is_correct
-                        ? "red"
-                        : "",
-                    color: selectedAnswer ? "white" : "black",
-                  }}
-                  onClick={() => optionClicked(option.is_correct)}
-                  disabled={selectedAnswer !== null}
-                >
-                  {option.description}
-                </button>
-              ))}
-            </div>
-
-            {/* Learn and Next Buttons */}
+          <>
+            <ProgressBar progress={progress} timeLeft={timeLeft} score={score} />
+            <QuestionCard
+              question={questions[currentQuestionIndex]}
+              selectedAnswer={selectedAnswer}
+              optionClicked={optionClicked}
+            />
             {selectedAnswer !== null && !showLearningMaterial && (
               <div className="action-buttons">
-                <button
-                  className="learn-button"
-                  onClick={() => setShowLearningMaterial(true)}
-                >
-                  Learn
-                </button>
-                <button className="next-button" onClick={handleNextQuestion}>
-                  Next
-                </button>
+                <button className="learn-button" onClick={() => setShowLearningMaterial(true)}>Learn</button>
+                <button className="next-button" onClick={handleNextQuestion}>Next</button>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Learning Material Modal */}
-        {showLearningMaterial && (
-          <div className="learning-modal">
-            <div className="learning-modal-content">
-              <h3>Detailed Explanation</h3>
-              <p>{questions[currentQuestionIndex].detailed_solution}</p>
-              <h3>Reading Material</h3>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html:
-                    questions[currentQuestionIndex].reading_material
-                      .content_sections,
-                }}
+            {showLearningMaterial && (
+              <LearningModal
+                question={questions[currentQuestionIndex]}
+                onClose={() => setShowLearningMaterial(false)}
               />
-              <button
-                className="close-button"
-                onClick={() => setShowLearningMaterial(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </>
